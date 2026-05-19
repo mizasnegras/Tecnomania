@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <title>Tecnomania! — Sistema de Inventario</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon-192.svg">
+    <link rel="apple-touch-icon" href="icon-192.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+    <!-- ═══════════════════ LOGIN OVERLAY ═══════════════════ -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-store-alt"></i>
+                <h1>Tecnomania!</h1>
+                <p>Sistema de Inventario</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginUsuario"><i class="fas fa-user"></i> Usuario</label>
+                    <input type="text" id="loginUsuario" required autocomplete="username" autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword"><i class="fas fa-lock"></i> Contraseña</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                <div id="loginError" class="login-error"></div>
+                <button type="submit" id="loginBtn" class="btn primary-btn full-width">
+                    <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                </button>
+            </form>
+            <p class="login-footer">
+                v4.0 · Producción ·
+                <a href="#" id="loginConfigLink" style="color: var(--primary-color); text-decoration: underline; cursor: pointer;">Configurar URL del backend</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Modal: Configurar Apps Script URL desde el login -->
+    <div id="loginConfigModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> URL del Apps Script</h3>
+                <button class="modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Si conectaste el frontend a otra cuenta de Google, pega aquí la URL del nuevo Apps Script.</p>
+                <div class="form-group">
+                    <label for="login_script_url"><i class="fas fa-code"></i> URL:</label>
+                    <input type="url" id="login_script_url" placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button id="login_test_url" class="btn secondary-btn">
+                        <i class="fas fa-bolt"></i> Probar
+                    </button>
+                    <button id="login_save_url" class="btn primary-btn">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ TOAST CONTAINER ═══════════════════ -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- ═══════════════════ APP PRINCIPAL ═══════════════════ -->
+    <div class="dashboard-container" style="display:none;">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-store-alt"></i> Tecnomania!
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="active" data-section="dashboard">
+                    <i class="fas fa-chart-line"></i> Panel Principal
+                </a>
+                <a href="#inventario" data-section="inventario">
+                    <i class="fas fa-cubes"></i> Inventario Actual
+                </a>
+                <a href="#productos" data-section="productos">
+                    <i class="fas fa-box-open"></i> Registrar Producto
+                </a>
+                <a href="#categorias" data-section="categorias">
+                    <i class="fas fa-tags"></i> Categorías
+                </a>
+                <a href="#compras" data-section="compras">
+                    <i class="fas fa-truck-loading"></i> Compras
+                </a>
+                <a href="#ventas" data-section="ventas">
+                    <i class="fas fa-cash-register"></i> Ventas
+                </a>
+                <a href="#resumenes" data-section="resumenes">
+                    <i class="fas fa-list-alt"></i> Resúmenes
+                </a>
+                <a href="#reportes" data-section="reportes">
+                    <i class="fas fa-calendar-alt"></i> Reportes por Fecha
+                </a>
+                <a href="#historial" data-section="historial">
+                    <i class="fas fa-history"></i> Historial
+                </a>
+                <a href="#configuracion" data-section="configuracion">
+                    <i class="fas fa-cog"></i> Configuración
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span id="currentUserDisplay">—</span>
+                </div>
+                <div class="sidebar-actions">
+                    <button id="themeToggleBtn" class="btn-icon" title="Cambiar tema">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <button id="pwaInstallBtn" class="btn-icon" title="Instalar app" style="display:none;">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button id="logoutBtn" class="btn-icon" title="Cerrar sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main-content">
+
+            <!-- ═══ Dashboard ═══ -->
+            <section id="dashboard" class="content-section active">
+                <h2><i class="fas fa-chart-line"></i> Dashboard — Resumen Financiero</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button id="cargarDatosGraficosBtn" class="btn primary-btn">
+                        <i class="fas fa-sync"></i> Actualizar Dashboard
+                    </button>
+                    <button id="calcularResumenBtn" class="btn secondary-btn">
+                        <i class="fas fa-calculator"></i> Calcular Resumen
+                    </button>
+                </div>
+                <div id="statusDashboard" class="status-message"></div>
+                <h3 style="margin: 1.5rem 0 1rem;"><i class="fas fa-box"></i> Productos</h3>
+                <div class="stats-grid">
+                    <div class="stat-card ventas">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                        <div class="stat-value" id="totalVentas">$0.00</div>
+                        <div class="stat-label">Total Ventas</div>
+                    </div>
+                    <div class="stat-card compras">
+                        <i class="fas fa-truck-loading fa-2x"></i>
+                        <div class="stat-value" id="totalCompras">$0.00</div>
+                        <div class="stat-label">Total Compras</div>
+                    </div>
+                    <div class="stat-card ganancias">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                        <div class="stat-value" id="totalGanancias">$0.00</div>
+                        <div class="stat-label">Ganancias Netas</div>
+                    </div>
+                    <div class="stat-card gastos">
+                        <i class="fas fa-money-bill-wave fa-2x"></i>
+                        <div class="stat-value" id="totalGastos">$0.00</div>
+                        <div class="stat-label">Total Gastos</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="resumenFinancieroChart"></canvas>
+                </div>
+            </section>
+
+            <!-- ═══ Inventario (con Edit/Delete) ═══ -->
+            <section id="inventario" class="content-section">
+                <h2><i class="fas fa-cubes"></i> Inventario Actual</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Productos disponibles. Edita o elimina con los botones de cada fila.</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem;">
+                    <button id="cargarInventarioBtn" class="btn secondary-btn">
+                        <i class="fas fa-sync"></i> Refrescar Inventario
+                    </button>
+                    <button class="btn primary-btn" data-export-excel="inventarioTable">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                </div>
+                <div id="statusInventario" class="status-message"></div>
+                <div style="max-height: 600px; overflow-y: auto; margin-top: 1rem; overflow-x: auto;">
+                    <table class="data-table" id="inventarioTable" data-label="inventario">
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>Nombre</th><th>Código</th><th>Categoría</th>
+                                <th>Stock</th><th>P. Venta</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventarioTableBody">
+                            <tr><td colspan="7" style="text-align:center; padding:3rem;">Presiona "Refrescar Inventario" para cargar.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ═══ Registrar Producto ═══ -->
+            <section id="productos" class="content-section">
+                <h2><i class="fas fa-box-open"></i> Registrar Nuevo Producto</h2>
+                <p class="status-message info" style="display:block;">
+                    <i class="fas fa-info-circle"></i> El ID se generará automáticamente.
+                </p>
+                <form id="productoForm" class="form-grid">
+                    <div class="form-group">
+                        <label for="p_codigo"><i class="fas fa-barcode"></i> Código Único:</label>
+                        <input type="text" id="p_codigo" required placeholder="Ej: PRD001">
+                    </div>
+                    <div class="form-group">
+                        <label for="p_nombre"><i class="fas fa-tag"></i> Nombre:</label>
+                        <input type="text" id="p_nombre" required placeholder="Nombre del producto">
+                    </div>
+                    <div class="form-group">
+                        <label for="p_categoria"><i class="fas fa-folder"></i> Categoría:</label>
+                        <select id="p_categoria" required>
+                            <option value="" disabled selected>Cargando categorías...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p_precio_compra"><i class="fas fa-dollar-sign"></i> Precio Compra:</label>
+                        <input type="number" id="p_precio_compra" required min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="p_precio_venta"><i class="fas fa-dollar-sign"></i> Precio Venta:</label>
+                        <input type="number" id="p_precio_venta" required min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="p_stock"><i class="fas fa-cubes"></i> Stock Inicial:</label>
+                        <input type="number" id="p_stock" required min="0" placeholder="0">
+                    </div>
+                    <button type="submit" class="btn primary-btn full-width">
+                        <i class="fas fa-save"></i> Registrar Nuevo Producto
+                    </button>
+                </form>
+                <div id="statusProducto" class="status-message"></div>
+            </section>
+
+            <!-- ═══ Categorías ═══ -->
+            <section id="categorias" class="content-section">
+                <h2><i class="fas fa-tags"></i> Gestión de Categorías</h2>
+                <form id="categoriaForm" class="form-grid single-col">
+                    <div class="form-group">
+                        <label for="c_nombre"><i class="fas fa-tag"></i> Nombre de la Categoría:</label>
+                        <input type="text" id="c_nombre" required placeholder="Ej: Aceites, Lubricantes, etc.">
+                    </div>
+                    <button type="submit" class="btn secondary-btn">
+                        <i class="fas fa-plus"></i> Agregar Categoría
+                    </button>
+                </form>
+                <div id="statusCategoria" class="status-message"></div>
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-list"></i> Categorías Existentes:</h3>
+                <ul id="listaCategorias" class="card-grid">
+                    <li>Cargando...</li>
+                </ul>
+            </section>
+
+            <!-- ═══ Compras ═══ -->
+            <section id="compras" class="content-section">
+                <h2><i class="fas fa-truck-loading"></i> Registro de Compras (Añade Stock)</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Registra compras de productos para aumentar el inventario.
+                </p>
+                <form id="compraForm" class="form-grid">
+                    <div class="form-group">
+                        <label for="co_query"><i class="fas fa-search"></i> Buscar Producto:</label>
+                        <input type="text" id="co_query" placeholder="ID, Código o Nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="co_cantidad"><i class="fas fa-boxes"></i> Cantidad:</label>
+                        <input type="number" id="co_cantidad" required min="1" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="co_precio_compra"><i class="fas fa-dollar-sign"></i> Precio Unitario:</label>
+                        <input type="number" id="co_precio_compra" required min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="co_proveedor"><i class="fas fa-user"></i> Proveedor (Opcional):</label>
+                        <input type="text" id="co_proveedor" placeholder="Nombre">
+                    </div>
+                    <div class="product-details hidden full-width" id="co_product_details"></div>
+                    <input type="hidden" id="co_producto_id">
+                    <button type="submit" class="btn primary-btn full-width" id="co_submit_btn" disabled>
+                        <i class="fas fa-cart-plus"></i> Registrar Compra
+                    </button>
+                </form>
+                <div id="statusCompra" class="status-message"></div>
+            </section>
+
+            <!-- ═══ Ventas ═══ -->
+            <section id="ventas" class="content-section">
+                <h2><i class="fas fa-cash-register"></i> Registro de Ventas (Resta Stock)</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Registra ventas para reducir el inventario.
+                </p>
+                <form id="ventaForm" class="form-grid">
+                    <div class="form-group">
+                        <label for="v_query"><i class="fas fa-search"></i> Buscar Producto:</label>
+                        <input type="text" id="v_query" required placeholder="ID, Código o Nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="v_cantidad"><i class="fas fa-shopping-cart"></i> Cantidad:</label>
+                        <input type="number" id="v_cantidad" required min="1" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="v_precio_venta"><i class="fas fa-dollar-sign"></i> Precio Unitario:</label>
+                        <input type="number" id="v_precio_venta" required min="0.01" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="v_cliente"><i class="fas fa-user"></i> Cliente (Opcional):</label>
+                        <input type="text" id="v_cliente" placeholder="Nombre">
+                    </div>
+                    <div class="product-details hidden full-width" id="v_product_details"></div>
+                    <input type="hidden" id="v_producto_id">
+                    <button type="submit" class="btn primary-btn full-width" id="v_submit_btn" disabled>
+                        <i class="fas fa-hand-holding-usd"></i> Registrar Venta
+                    </button>
+                </form>
+                <div id="statusVenta" class="status-message"></div>
+            </section>
+
+            <!-- ═══ Resúmenes ═══ -->
+            <section id="resumenes" class="content-section">
+                <h2><i class="fas fa-list-alt"></i> Resúmenes y Reportes</h2>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+                    <button id="resumenVentasBtn" class="btn secondary-btn">
+                        <i class="fas fa-chart-bar"></i> Ver Resumen de Ventas
+                    </button>
+                    <button id="resumenComprasBtn" class="btn secondary-btn">
+                        <i class="fas fa-chart-bar"></i> Ver Resumen de Compras
+                    </button>
+                    <button class="btn primary-btn" data-export-excel="resumenTable">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                </div>
+                <div id="statusResumen" class="status-message"></div>
+                <div style="max-height: 600px; overflow-y: auto; margin-top: 20px; overflow-x: auto;">
+                    <table class="data-table hidden" id="resumenTable">
+                        <thead></thead>
+                        <tbody id="resumenTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ═══ Reportes por Rango de Fecha ═══ -->
+            <section id="reportes" class="content-section">
+                <h2><i class="fas fa-calendar-alt"></i> Reportes por Rango de Fecha</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Filtra Compras o Ventas por rango de fechas. Exporta a Excel desde el resultado.</p>
+                <form id="reporteFechaForm" class="form-grid">
+                    <div class="form-group">
+                        <label for="reporte_sheet"><i class="fas fa-table"></i> Tabla:</label>
+                        <select id="reporte_sheet" required>
+                            <option value="Ventas">Ventas (productos)</option>
+                            <option value="Compras">Compras (productos)</option>
+                            <option value="VentasMateriales">Ventas Materiales</option>
+                            <option value="ComprasMateriales">Compras Materiales</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reporte_from"><i class="fas fa-calendar"></i> Desde:</label>
+                        <input type="date" id="reporte_from" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reporte_to"><i class="fas fa-calendar"></i> Hasta:</label>
+                        <input type="date" id="reporte_to" required>
+                    </div>
+                    <button type="submit" class="btn primary-btn full-width">
+                        <i class="fas fa-search"></i> Generar Reporte
+                    </button>
+                </form>
+                <div id="reporteResultado" style="margin-top: 1.5rem;"></div>
+            </section>
+
+            <!-- ═══ Historial ═══ -->
+            <section id="historial" class="content-section">
+                <h2><i class="fas fa-history"></i> Historial de Cambios</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Auditoría de todas las acciones (insert/edit/delete) realizadas en el sistema.</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem;">
+                    <button class="btn secondary-btn" onclick="cargarHistorial()">
+                        <i class="fas fa-sync"></i> Refrescar
+                    </button>
+                    <button class="btn primary-btn" data-export-excel="historialTable">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </button>
+                </div>
+                <div style="max-height: 600px; overflow-y: auto; overflow-x: auto;">
+                    <table class="data-table" id="historialTable" data-label="historial">
+                        <thead>
+                            <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>ID</th><th>Detalle</th></tr>
+                        </thead>
+                        <tbody id="historialTableBody">
+                            <tr><td colspan="6" style="text-align:center; padding:3rem;">Presiona "Refrescar" para cargar.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ═══ Configuración ═══ -->
+            <section id="configuracion" class="content-section">
+                <h2><i class="fas fa-cog"></i> Configuración</h2>
+
+                <h3 style="margin-top: 1rem;"><i class="fas fa-database"></i> Base de Datos</h3>
+                <div class="config-actions">
+                    <p><i class="fas fa-info-circle"></i> Crea/verifica las pestañas necesarias en Google Sheet.</p>
+                    <button id="iniciarDBBtn" class="btn primary-btn">
+                        <i class="fas fa-play-circle"></i> Iniciar Base de Datos
+                    </button>
+                    <p class="warning-text">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>¡ADVERTENCIA!</strong> Resetear ELIMINA TODOS los datos.
+                    </p>
+                    <button id="resetDBBtn" class="btn danger-btn">
+                        <i class="fas fa-sync-alt"></i> Resetear Base de Datos
+                    </button>
+                </div>
+                <div id="statusConfig" class="status-message"></div>
+
+                <h3 style="margin-top: 2rem;"><i class="fas fa-save"></i> Backup y Restore</h3>
+                <div class="config-actions">
+                    <p><i class="fas fa-info-circle"></i> <strong>IMPORTANTE:</strong> Descarga un backup completo antes de migrar a otra cuenta de Google.</p>
+                    <button id="settings_backup" class="btn primary-btn">
+                        <i class="fas fa-cloud-download-alt"></i> Descargar Backup Completo (JSON + Excel)
+                    </button>
+                    <p style="margin-top: 1.5rem;"><i class="fas fa-upload"></i> Restaurar backup desde archivo JSON:</p>
+                    <label class="btn secondary-btn" style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <i class="fas fa-file-upload"></i> Seleccionar archivo JSON de backup
+                        <input type="file" id="settings_restore_input" accept=".json" style="display:none;">
+                    </label>
+                    <p class="warning-text">
+                        <i class="fas fa-exclamation-triangle"></i> Restaurar SOBREESCRIBE los datos actuales. Haz backup actual primero.
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 2rem;"><i class="fas fa-link"></i> Conexión a Google</h3>
+                <div class="config-actions">
+                    <p><i class="fas fa-info-circle"></i> Cambia a otra cuenta de Google sin tocar código. Pega aquí la URL del Apps Script y el ID del Spreadsheet de la NUEVA cuenta.</p>
+                    <div class="form-group">
+                        <label for="settings_script_url"><i class="fas fa-code"></i> URL del Apps Script:</label>
+                        <input type="url" id="settings_script_url" placeholder="https://script.google.com/macros/s/AKfy.../exec">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings_spreadsheet_id"><i class="fas fa-table"></i> ID del Spreadsheet (informativo):</label>
+                        <input type="text" id="settings_spreadsheet_id" placeholder="1nxYZdLCLD-lZ5nq...">
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button id="settings_test" class="btn secondary-btn">
+                            <i class="fas fa-bolt"></i> Probar conexión
+                        </button>
+                        <button id="settings_save" class="btn primary-btn">
+                            <i class="fas fa-save"></i> Guardar configuración
+                        </button>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;"><i class="fas fa-keyboard"></i> Atajos de Teclado</h3>
+                <div class="config-actions" style="font-size: 0.9rem;">
+                    <p><kbd>Ctrl+1</kbd> Dashboard · <kbd>Ctrl+2</kbd> Inventario · <kbd>Ctrl+3</kbd> Registrar Producto</p>
+                    <p><kbd>Ctrl+4</kbd> Compras · <kbd>Ctrl+5</kbd> Ventas · <kbd>Ctrl+6</kbd> Resúmenes</p>
+                    <p><kbd>Ctrl+H</kbd> Historial · <kbd>Ctrl+,</kbd> Configuración · <kbd>Ctrl+K</kbd> Buscar · <kbd>Esc</kbd> Cerrar modal</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ═══════════════════ MODAL: EDITAR PRODUCTO ═══════════════════ -->
+    <div id="editProductModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Producto</h3>
+                <button class="modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="editProductForm" class="modal-body form-grid">
+                <input type="hidden" id="edit_p_id">
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Nombre:</label>
+                    <input type="text" id="edit_p_nombre" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-barcode"></i> Código:</label>
+                    <input type="text" id="edit_p_codigo" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-folder"></i> Categoría:</label>
+                    <select id="edit_p_categoria" required></select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-dollar-sign"></i> Precio Compra:</label>
+                    <input type="number" id="edit_p_precio_compra" required min="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-dollar-sign"></i> Precio Venta:</label>
+                    <input type="number" id="edit_p_precio_venta" required min="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-cubes"></i> Stock:</label>
+                    <input type="number" id="edit_p_stock" required min="0">
+                </div>
+                <button type="submit" class="btn primary-btn full-width">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ MODAL: DETALLE HISTORIAL ═══════════════════ -->
+    <div id="historialDetailModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fas fa-history"></i> Detalle del Cambio</h3>
+                <button class="modal-close" aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="historialDetailContent" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="store" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+  <g transform="translate(128 160)">
+    <path d="M0 32 L256 32 L232 0 L24 0 Z" fill="url(#store)"/>
+    <rect x="12" y="36" width="232" height="170" rx="10" fill="#1e293b" stroke="url(#store)" stroke-width="5"/>
+    <rect x="102" y="106" width="52" height="100" rx="5" fill="url(#store)"/>
+    <rect x="32" y="58" width="54" height="38" rx="5" fill="#8b5cf6" opacity="0.6"/>
+    <rect x="170" y="58" width="54" height="38" rx="5" fill="#8b5cf6" opacity="0.6"/>
+    <text x="128" y="160" font-family="system-ui" font-weight="900" font-size="48" fill="#fff" text-anchor="middle">T!</text>
+  </g>
+  <text x="256" y="450" font-family="system-ui" font-weight="800" font-size="58" fill="url(#store)" text-anchor="middle">TECNOMANIA!</text>
+</svg>
