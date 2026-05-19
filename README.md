@@ -20,20 +20,30 @@ https://mizasnegras.github.io/Tecnomania/
 
 ## Stack
 
-- Frontend: HTML + CSS + JS vanilla, Chart.js, SheetJS, Font Awesome
-- Backend: Google Apps Script (sg.js)
+- Frontend (este repo): HTML + CSS + JS vanilla, Chart.js, SheetJS, Font Awesome
+- Backend: Google Apps Script (código NO incluido en este repo por contener hash de password admin — vive en el editor Apps Script del owner)
 - DB: Google Sheets
 
-## Setup (nueva cuenta Google)
+## Estructura
 
-1. **Crear Spreadsheet** en la nueva cuenta de Google. Copia el ID (parte de la URL entre `/d/` y `/edit`).
-2. **Abrir Apps Script** desde el menú `Extensions → Apps Script`. Pega el contenido de `sg.js`. Cambia la constante `SPREADSHEET_ID` por la del nuevo Sheet.
-3. **(Opcional) cambiar contraseña**:
-   - Corre la función `generarHashPassword()` desde el editor Apps Script con tu nueva password.
-   - Copia el hash que aparece en el log y reemplaza `ADMIN_PASS_HASH`.
-4. **Deploy**: botón "Deploy" → "New deployment" → tipo "Web app". Execute as: `Me`. Who has access: `Anyone`. Click Deploy. Copia la URL del Web app.
-5. **Configurar app**: abre la app, inicia sesión, ve a `Configuración → Conexión a Google`, pega la nueva URL del Apps Script y guarda.
-6. **Iniciar DB**: `Configuración → Iniciar Base de Datos` crea las pestañas necesarias.
+```
+index.html         — UI completa
+script.js          — Lógica frontend, auth, fetch al Apps Script
+estilo.css         — Estilos (incluye tema oscuro/claro)
+manifest.json      — PWA manifest
+service-worker.js  — Cache estáticos + fallback offline
+icon-*.svg         — Iconos PWA
+```
+
+El archivo `sg.js` (backend) **NO está en el repo**. Está custodiado por el owner en el editor Apps Script. Para clonar la arquitectura en otra cuenta, contactar al owner.
+
+## Setup (nueva instalación)
+
+Esta app ya está configurada para conectar al backend Apps Script de `mizasnegras`. Si quieres usar otra cuenta Google:
+
+1. Pide al owner el código `sg.js` y un nuevo `SPREADSHEET_ID` + Apps Script Web app URL deployada con `Who has access: Anyone`.
+2. Abre la app → `Configuración → Conexión a Google` → pega la nueva URL del Apps Script y guarda.
+3. `Configuración → Iniciar Base de Datos` crea las pestañas necesarias.
 
 ## Migrar datos desde cuenta vieja
 
