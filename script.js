@@ -505,11 +505,13 @@ async function handleTransactionPost(e, type) {
 
 async function loadInventario() {
     const statusEl = 'statusInventario';
+    const statusNode = document.getElementById(statusEl);
     displayStatusInline(statusEl, 'info', 'Cargando inventario...');
     const data = await apiGet('getInventario');
     const tbody = document.getElementById('inventarioTableBody');
 
     if (data.status === 'success' && data.data) {
+        if (statusNode) statusNode.style.display = 'none';
         if (data.data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem;">No hay productos registrados.</td></tr>';
             return;
@@ -540,6 +542,7 @@ async function loadInventario() {
         });
         toast('success', 'Inventario cargado', `${data.data.length} productos`);
     } else {
+        if (statusNode) statusNode.style.display = 'none';
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--warning-color);">${data.message || 'Sin datos'}</td></tr>`;
     }
 }
