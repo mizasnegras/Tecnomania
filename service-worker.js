@@ -6,11 +6,12 @@
 //   - API Google Apps Script: network-only (no cachear datos dinámicos)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'tecnomania-v4.0';
+const CACHE_NAME = 'tecnomania-v4.1';
 const STATIC_ASSETS = [
     './',
     'index.html',
     'estilo.css',
+    'ticket-core.js',
     'script.js',
     'manifest.json',
     'icon-192.svg',

@@ -384,6 +384,8 @@ function setupForms() {
 
     document.getElementById('compraForm').addEventListener('submit', (e) => handleTransactionPost(e, 'compra'));
     document.getElementById('ventaForm').addEventListener('submit', (e) => handleTransactionPost(e, 'venta'));
+    document.getElementById('reimprimirTicketBtn').addEventListener('click', reimprimirUltimoTicket);
+    actualizarBotonReimprimir();
 
     document.getElementById('resumenVentasBtn').addEventListener('click', () => loadSummary('Ventas'));
     document.getElementById('resumenComprasBtn').addEventListener('click', () => loadSummary('Compras'));
@@ -489,6 +491,20 @@ async function handleTransactionPost(e, type) {
         precio: document.getElementById(`${prefix}_precio_${type === 'compra' ? 'compra' : 'venta'}`).value,
         extra_data: document.getElementById(`${prefix}_${type === 'compra' ? 'proveedor' : 'cliente'}`).value
     };
+    // Capturamos datos de la venta ANTES del reset (para el ticket)
+    let ticketData = null;
+    if (type === 'venta') {
+        const query = document.getElementById('v_query').value.trim();
+        const prod = productDataCache[query];
+        ticketData = {
+            producto: prod ? prod.nombre : (document.getElementById('v_producto_id').value || 'Producto'),
+            codigo: prod ? prod.código : '',
+            cantidad: parseFloat(payload.cantidad) || 0,
+            precio: parseFloat(payload.precio) || 0,
+            cliente: payload.extra_data || 'Consumidor Final'
+        };
+    }
+
     const data = await apiPost('registrarTransaccion', payload);
     displayStatus(statusId, data.status === 'success' ? 'success' : 'warning', data.message);
     if (data.status === 'success') {
@@ -496,7 +512,31 @@ async function handleTransactionPost(e, type) {
         document.getElementById(`${prefix}_product_details`).classList.add('hidden');
         document.getElementById(`${prefix}_submit_btn`).disabled = true;
         productDataCache = {};
+        if (type === 'venta' && ticketData) {
+            localStorage.setItem('tm_last_ticket', JSON.stringify(ticketData));
+            actualizarBotonReimprimir();
+            imprimirTicketVenta(ticketData);
+        }
     }
+}
+// imprimirTicketVenta() vive en ticket-core.js (compartido con preview-ticket.html)
+
+function reimprimirUltimoTicket() {
+    const raw = localStorage.getItem('tm_last_ticket');
+    if (!raw) {
+        toast('warning', 'Sin ticket', 'Aún no se ha registrado ninguna venta en este equipo.');
+        return;
+    }
+    try {
+        imprimirTicketVenta(JSON.parse(raw));
+    } catch (_) {
+        toast('warning', 'Ticket inválido', 'No se pudo leer el último ticket guardado.');
+    }
+}
+
+function actualizarBotonReimprimir() {
+    const btn = document.getElementById('reimprimirTicketBtn');
+    if (btn) btn.disabled = !localStorage.getItem('tm_last_ticket');
 }
 
 // ┌─────────────────────────────────────────────────────────────────────────┐
