@@ -478,7 +478,9 @@ function registrarTransaccion(data) {
 
     try {
         sheet.appendRow([generateUniqueAppId(), data.producto_id, cantidad, precio, new Date(), data.extra_data || '']);
-        sheet.getRange(rowIndex + 1, stockColIndex + 1).setValue(nuevoStock);
+        // El stock vive en la hoja Productos (rowIndex viene de findProductRow(sheetProductos)).
+        // Antes se escribía por error en `sheet` (Ventas/Compras) → el stock nunca se actualizaba.
+        sheetProductos.getRange(rowIndex + 1, stockColIndex + 1).setValue(nuevoStock);
 
         if (isCompra && precio !== parseFloat(rowData[precioCompraColIndex])) {
             sheetProductos.getRange(rowIndex + 1, precioCompraColIndex + 1).setValue(precio);

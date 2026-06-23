@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preview Ticket — Tecnomania!</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #1e1e2e; color: #eee;
+           display: flex; flex-direction: column; align-items: center; gap: 1rem;
+           padding: 2rem; }
+    h1 { font-size: 1.2rem; }
+    .ctrls { display: grid; grid-template-columns: auto 1fr; gap: .5rem 1rem;
+             background: #2a2a3c; padding: 1rem 1.5rem; border-radius: 10px; }
+    input { padding: .4rem .6rem; border-radius: 6px; border: 1px solid #555;
+            background: #1a1a28; color: #eee; }
+    button { grid-column: 1 / -1; padding: .7rem; border: none; border-radius: 8px;
+             background: #7c5cff; color: #fff; font-size: 1rem; cursor: pointer; }
+    button:hover { background: #6a4ae0; }
+    .preview { background: #fff; color: #000; width: 80mm; padding: 6mm 4mm;
+               font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4; }
+    .preview .tk-center { text-align: center; }
+    .preview .tk-b { font-weight: bold; }
+    .preview .tk-big { font-size: 16px; }
+    .preview hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+    .preview table { width: 100%; border-collapse: collapse; }
+    .preview td { padding: 1px 0; vertical-align: top; }
+    .preview td.tk-r { text-align: right; }
+    .preview .tk-total td { font-weight: bold; font-size: 14px; padding-top: 4px; }
+    .preview .tk-foot { margin-top: 10px; font-size: 11px; }
+    .note { font-size: .8rem; color: #aaa; max-width: 380px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>🧾 Previsualización del Ticket de Venta</h1>
+  <p class="note">Esta página NO toca el backend ni hace login. Solo prueba el
+     diseño del ticket con datos de ejemplo, usando la misma lógica de
+     <code>imprimirTicketVenta()</code> de <code>script.js</code>.</p>
+
+  <div class="ctrls">
+    <label for="p">Producto:</label><input id="p" value="Audífonos Bluetooth X9">
+    <label for="c">Código:</label><input id="c" value="AUD-X9">
+    <label for="q">Cantidad:</label><input id="q" type="number" value="2">
+    <label for="pr">Precio unit.:</label><input id="pr" type="number" value="350.00" step="0.01">
+    <label for="cl">Cliente:</label><input id="cl" value="María Pérez">
+    <button onclick="preview()">🖨️ Generar e imprimir ticket</button>
+  </div>
+
+  <div id="render" class="preview"></div>
+
+  <script>
+    // Simula lo mínimo que la función necesita de script.js
+    const Config = { usuario: 'Zoemiriam' };
+    function toast(t, a, b) { alert(a + ': ' + b); }
+  </script>
+  <script src="ticket-core.js"></script>
+  <script>
+    function preview() {
+      imprimirTicketVenta({
+        producto: document.getElementById('p').value,
+        codigo: document.getElementById('c').value,
+        cantidad: parseFloat(document.getElementById('q').value) || 0,
+        precio: parseFloat(document.getElementById('pr').value) || 0,
+        cliente: document.getElementById('cl').value || 'Consumidor Final'
+      });
+    }
+    // Render inline al cargar para ver el diseño sin abrir ventana
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('render').innerHTML = construirTicketHTML({
+        producto: 'Audífonos Bluetooth X9', codigo: 'AUD-X9',
+        cantidad: 2, precio: 350, cliente: 'María Pérez'
+      });
+    });
+  </script>
+</body>
+</html>
